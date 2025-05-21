@@ -8,7 +8,6 @@ if isTurtle then
 	st_delay = 0 -- TurtleWoW removed the delay between main hand and off hand auto attacks
 end
 
-
 local defaults = {
 	x = 0,
 	y = -150,
@@ -20,7 +19,10 @@ local defaults = {
 	move = "off",
 	icons = 1,
 	timers = 1,
-	style = 0
+	style = 0,
+	colorBar = "1,1,1",
+	colorTimer = "0,0,0",
+	timerPostitionX = 0
 }
 local settings = {
 	x = "Bar X position",
@@ -34,6 +36,9 @@ local settings = {
 	timers = "Show weapon timers (1 = show, 0 = hide)",
 	style = "Choose 1, 2, 3, 4, 5 or 6",
 	move = "Enable bars movement",
+	colorBar = "Bar color (R,G,B). Number range is 0-1.",
+	colorTimer = "Bar color (R,G,B). Number range is 0-1.",
+	timerPostitionX = "No idea"
 }
 local armorDebuffs = {
 	["Interface\\Icons\\Ability_Warrior_Sunder"] = 450, 
@@ -223,14 +228,19 @@ local function UpdateAppearance()
 	SP_ST_FrameOFF:ClearAllPoints()
 	
 	SP_ST_Frame:SetPoint("TOPLEFT", SP_ST_GS["x"], SP_ST_GS["y"])
-	SP_ST_maintimer:SetPoint("RIGHT", "SP_ST_Frame", "RIGHT", -2, 0)
+	SP_ST_maintimer:SetPoint("RIGHT", "SP_ST_Frame", "CENTER", 7, 0)
 	SP_ST_maintimer:SetFont("Fonts\\FRIZQT__.TTF", SP_ST_GS["h"])
-	SP_ST_maintimer:SetTextColor(1,1,1,1);
 
-	SP_ST_FrameOFF:SetPoint("TOPLEFT", "SP_ST_Frame", "BOTTOMLEFT", 0, -2);
-	SP_ST_offtimer:SetPoint("RIGHT", "SP_ST_FrameOFF", "RIGHT", -2, 0)
+	-- Set timer text color from settings
+	local r, g, b = string.match(SP_ST_GS["colorTimer"] or "0,0,0", "([%d%.]+),([%d%.]+),([%d%.]+)")
+	r, g, b = tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 0
+	SP_ST_maintimer:SetTextColor(r, g, b, 1)
+	SP_ST_offtimer:SetTextColor(r, g, b, 1)
+
+	SP_ST_FrameOFF:SetPoint("TOPLEFT", "SP_ST_Frame", "BOTTOMLEFT", 0, 0);
+	SP_ST_offtimer:SetPoint("RIGHT", "SP_ST_FrameOFF", "CENTER", 7, 0)
 	SP_ST_offtimer:SetFont("Fonts\\FRIZQT__.TTF", SP_ST_GS["h"])
-	SP_ST_offtimer:SetTextColor(1,1,1,1);
+
 
 	if (SP_ST_GS["icons"] ~= 0) then
 		SP_ST_mainhand:SetTexture(GetInventoryItemTexture("player", GetInventorySlotInfo("MainHandSlot")));
@@ -731,6 +741,25 @@ local function ChatHandler(msg)
 			_,_,_,SP_ST_GS["x"], SP_ST_GS["y"]= SP_ST_Frame:GetPoint()
 			configmod = false;
 			UpdateAppearance();
+		end
+	elseif cmd == "colorBar" or cmd == "colorTimer" then
+		if arg == nil then
+			print("Usage: /st color R,G,B Example: /st color 1,0,0")
+			return
+		end
+		local rgb = SplitString(arg, ",")
+		local r = tonumber(rgb[1])
+		local g = tonumber(rgb[2])
+		local b = tonumber(rgb[3])
+		if r and g and b and r >= 0 and r <= 1 and g >= 0 and g <= 1 and b >= 0 and b <= 1 then
+			if cmd == "colorBar" then
+				SP_ST_GS["colorBar"] = r..","..g..","..b
+			elseif cmd == "colorTimer" then
+				SP_ST_GS["colorTimer"] = r..","..g..","..b
+			end
+			UpdateAppearance()
+		else
+			print("Error: Invalid argument")
 		end
 	elseif settings[cmd] ~= nil then
 		if arg ~= nil then
